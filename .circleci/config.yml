@@ -8,4 +8,5 @@ jobs:
     steps:
       - checkout
       - run: go get github.com/PuerkitoBio/goquery
+      - run: go get github.com/aws/aws-lambda-go/lambda
       - run: go build
