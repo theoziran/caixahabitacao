@@ -6,8 +6,10 @@ Resources:
   CaixaHabitacaoLambda:
     Type: "AWS::Serverless::Function"
     Properties:
-      Handler: "caixa"
-      CodeUri: .
+      Handler: "main"
+      Policies:
+        - AWSLambdaExecute
+      CodeUri: /tmp/caixa.zip
       Runtime: "go1.x"
       Timeout: 30
       Events:
