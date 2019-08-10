@@ -1,0 +1,11 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/golang:1.9
+
+    working_directory: /go/src/github.com/theoziran/caixahabitacao
+    steps:
+      - checkout
+      - run: go get github.com/PuerkitoBio/goquery
+      - run: go build
