@@ -9,11 +9,20 @@ import (
 	"log"
 	"strconv"
 	"encoding/json"
-	"os"
 	"crypto/tls"
 	"github.com/PuerkitoBio/goquery"
+	"context"
+	"github.com/aws/aws-lambda-go/lambda"
 )
 
+type GatewayProxyEvent struct {
+        Path string `json:"path"`
+        Parameters map[string]string `json:"pathParameters"`
+}
+
+type Response struct {
+        Body string `json:"body"`
+}
 
 type Prestacao struct{
 	NumParcela int `json:"parcela"`
@@ -29,14 +38,18 @@ func BrlToFloat(s string) (float64, error) {
 	return strconv.ParseFloat(s, 64)
 }
 
+func HandleRequest(ctx context.Context, event GatewayProxyEvent) (Response, error) {
+	params := event.Parameters
+	prestacoes := GetPrestacao(params["contrato"], params["cpf"], params["diaNascimento"])
+	json, err := json.Marshal(prestacoes)
+	return Response{
+			Body: string(json),
+		}, err
+}
 
-func main() {
+func GetPrestacao(contratoNum string, cpfNum string, diaNascimento string) ([]Prestacao) {
 	// fmt.Printf("Starting the request\n")
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-
-	contratoNum := os.Args[1]
-	cpfNum := os.Args[2]
-	diaNascimento := os.Args[3]
 
 	// fmt.Printf("%s - %s - %s\n", contratoNum, cpfNum, diaNascimento)
 	var prestacoes []Prestacao
@@ -66,6 +79,8 @@ func main() {
 	}
 
 	resp, err := http.DefaultClient.Do(req)	
+
+	defer resp.Body.Close()
 	
 	if err != nil {
 		fmt.Printf("%s", "Error while loging")
@@ -152,11 +167,11 @@ func main() {
 		
 	})
 
-	jsonBytes, err := json.Marshal(prestacoes)
-	if err != nil {
-		fmt.Println("error:", err)
-	}
-
-	fmt.Println(string(jsonBytes))
+	return prestacoes
 
 }
+
+func main() {
+        lambda.Start(HandleRequest)
+}
+

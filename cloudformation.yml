@@ -1,0 +1,47 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: caixahabitacao
+
+Resources:
+  CaixaHabitacaoLambda:
+    Type: "AWS::Serverless::Function"
+    Properties:
+      Handler: "caixa"
+      CodeUri: .
+      Runtime: "go1.x"
+      Timeout: 30
+      Events:
+        GetPrestacao:
+          Type: Api
+          Properties:
+            Path: /prestacao/{contrato}/{cpf}/{diaNascimento}
+            Method: get
+            RestApiId: !Ref CaixaHabitacaoApi
+      Environment:
+        Variables:
+          environment: "producao"
+  CaixaHabitacaoApi:
+    Type: "AWS::Serverless::Api"
+    Properties:
+      StageName: Prod
+      EndpointConfiguration: "REGIONAL"
+      DefinitionBody:
+        swagger: '2.0'
+        info:
+          version: '2018-11-06'
+          description: API para buscar prestacoes de um contrato
+          title: Caixa Habitacao API
+        schemes:
+        - https
+        paths:
+          /prestacao/{contrato}/{cpf}/{diaNascimento}:
+            get:
+              description: "Busca prestacoes por contrato"
+              produces:
+                - application/json
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                type: aws_proxy
+                uri:
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CaixaHabitacaoLambda.Arn}/invocations
+          
