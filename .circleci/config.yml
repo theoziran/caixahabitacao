@@ -10,3 +10,20 @@ jobs:
       - run: go get github.com/PuerkitoBio/goquery
       - run: go get github.com/aws/aws-lambda-go/lambda
       - run: go build
+  deploy:
+    docker:
+      - image: circleci/python:3.6.1
+    steps:
+      - checkout
+      - run:
+          name: Install the AWS CLI
+          command: |
+              python3 -m venv venv
+              source venv/bin/activate
+              pip install awscli
+              aws cloudformation package --template cloudformation.yml --s3-bucket caixahabitacao-template --output-template-file template_output.yml
+              aws cloudformation deploy --template cloudformation_output.yml --s3-bucket caixahabitacao-template --stack-name caixahabitacao-stack --capabilities CAPABILITY_IAM --no-fail-on-empty-changeset
+      - persist_to_workspace:
+          root: ./
+          paths:
+            - _deploy_parameter
